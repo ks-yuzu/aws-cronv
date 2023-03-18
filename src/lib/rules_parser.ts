@@ -5,6 +5,7 @@ type ParsedRule = (string | number)[]
 interface AWSEvent {
   Rules: Array<{
     Name: string
+    Description: string
     Arn: string
     State: string
     ScheduleExpression: string
@@ -14,6 +15,8 @@ interface AWSEvent {
 
 export interface Rule {
   name: string
+  description?: string
+  arn?: string
   schedule: {
     minutes: ParsedRule
     hours: ParsedRule
@@ -35,6 +38,7 @@ export class RulesParser {
       parsedRules.push({
         name: rule.Name,
         schedule: schedule,
+        description: rule.Description,
       })
     }
     return parsedRules

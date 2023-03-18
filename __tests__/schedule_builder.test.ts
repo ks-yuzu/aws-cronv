@@ -13,10 +13,13 @@ describe("build", () => {
   }]
 
   test("Build successfully", () => {
-    const schedule = ScheduleBuilder.build(testData)
+    const schedule = ScheduleBuilder.build(testData, '2022-01-01T00:00:00+00:00')
     // Every 30 minutes
     const bTimestamps = [...Array(47).keys()].map(i => 1640997000000 + (i * 1800000))
-    expect(schedule).toEqual({
+
+    const timestamps = {} as {[key: string]: number[]}
+    Object.keys(schedule).forEach(key => timestamps[key] = schedule[key].map(i => i.timestamp))
+    expect(timestamps).toEqual({
       ruleA: [1640999400000],
       ruleB: bTimestamps,
     })

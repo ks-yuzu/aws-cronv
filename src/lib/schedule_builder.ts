@@ -2,31 +2,33 @@ import awsCronParser from "aws-cron-parser"
 import { Rule } from "./rules_parser"
 
 export interface Schedule {
-  [key: string]: number[]
+  [key: string]: ({timestamp: number} & Rule)[]
 }
 
 export class ScheduleBuilder {
-  static build(rules: Array<Rule>, dateString: string = "2022-01-01T00:00:00+00:00"): Schedule {
-    const currentDate = new Date(dateString)
-    const baseTimestamp = currentDate.getTime()
-    const schedule: { [key: string]: Set<number> } = {}
-    while (true) {
-      for (const rule of rules) {
+  static build(rules: Array<Rule>, dateString: string = (new Date).toISOString()): Schedule {
+    const baseTimestamp = (new Date(dateString)).getTime()
+    const schedule: { [key: string]: Set<Schedule[keyof Schedule][0]> } = {}
+
+    for (const rule of rules) {
+      const currentDate = new Date(dateString)
+
+      while (true) {
         const next: Date | null = awsCronParser.next(rule.schedule, currentDate)
         if (!next) {
-          continue
+          break
         }
         const timestamp = next.getTime()
-        if (!schedule[rule.name]) {
-          schedule[rule.name] = new Set()
+        if (!this.withinTargetDay(baseTimestamp, timestamp)) {
+          break
         }
+
+        schedule[rule.name] ??= new Set()
         if (this.withinTargetDay(baseTimestamp, timestamp)) {
-          schedule[rule.name].add(timestamp)
+          schedule[rule.name].add({...rule, timestamp})
         }
-      }
-      currentDate.setMinutes(currentDate.getMinutes() + 1)
-      if (!this.withinTargetDay(baseTimestamp, currentDate.getTime())) {
-        break
+
+        currentDate.setTime(timestamp)
       }
     }
     const built: Schedule = {}
@@ -37,6 +39,6 @@ export class ScheduleBuilder {
   }
 
   static withinTargetDay(base: number, target: number) {
-    return (((target - base) / 1000) < 86400)
+    return (((target - base) / 1000) < parseInt(process.env.SCHEDULE_DURATION ?? '86400'))
   }
 }

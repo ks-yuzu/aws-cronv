@@ -2,7 +2,13 @@ import { Schedule } from "./schedule_builder"
 
 export class Template {
   static build(schedule: Schedule) {
-    const rows = Object.keys(schedule).map(name => schedule[name].map(timestamp => `['${name}', new Date(${timestamp}), new Date(${timestamp})]`).join()).filter(e => e);
+    const rows = Object
+      .keys(schedule)
+      .map(name => schedule[name].map(event => {
+        const label = event.description ?? ''
+        return `['${name}', '${label}', new Date(${event.timestamp}), new Date(${event.timestamp})]`
+      }).join())
+      .filter(e => e);
     return `
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 
@@ -14,6 +20,7 @@ export class Template {
         var dataTable = new google.visualization.DataTable()
 
         dataTable.addColumn({ type: 'string', id: 'Name' })
+        dataTable.addColumn({ type: 'string', id: 'Description' })
         dataTable.addColumn({ type: 'date', id: 'Start' })
         dataTable.addColumn({ type: 'date', id: 'End' })
 
